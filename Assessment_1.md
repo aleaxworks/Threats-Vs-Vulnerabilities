@@ -4,7 +4,7 @@
 
 **Assignment:** LAB 1 (Week 1)
 
-**Name:** <NUR ALEA BATRISYIA BINTI MOHD FADZLY>
+**Name:** NUR ALEA BATRISYIA BINTI MOHD FADZLY
 
 **Student:** 52215251683
 
