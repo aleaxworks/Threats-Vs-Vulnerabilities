@@ -2,8 +2,8 @@
 
 **Course:** IKB21403 – Vulnerability Analysis
 **Assignment:** LAB 1 (Week 1)
-**Name:** <your name>
-**Matric No.:** <your matric number>
+**Name:** <NUR ALEA BATRISYIA BINTI MOHD FADZLY>
+**Student:** <52215251683>
 
 ---
 
