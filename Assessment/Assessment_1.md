@@ -11,7 +11,20 @@ Cybersecurity is important to protect computer systems, networks, and sensitive 
 - To identify threats and vulnerabilities in different scenarios.
 - To explain the reasons for classifying each scenario.
 
-## 3. Threat vs Vulnerability
+## 3. Comparison Between Threats and Vulnerabilities
+
+| No. | Aspect | Threat | Vulnerability |
+|---:|---|---|---|
+| 1 | Definition | A potential cause of harm to a system, network, or data. | A weakness in a system, application, or security control that can be exploited. |
+| 2 | Source | May originate from cybercriminals, malware, or malicious insiders. | May arise from software flaws, weak passwords, or improper configurations. |
+| 3 | Nature | Represents a potential danger to information security. | Represents a weakness that may expose a system to security risks. |
+| 4 | Examples | Phishing attacks, ransomware, and unauthorized access attempts. | Unpatched software, weak passwords, and improperly exposed network ports. |
+| 5 | Impact | Can cause data breaches, financial losses, or service disruption. | Can increase the likelihood of successful cyberattacks. |
+| 6 | Identification | Identified through threat intelligence, security monitoring, and analysis of attack activities. | Identified through vulnerability scanning, security audits, and penetration testing. |
+| 7 | Mitigation | Managed through threat detection, firewalls, and incident response measures. | Reduced by applying security patches, strengthening authentication, and correcting misconfigurations. |
+| 8 | Role in an Attack | May exploit a weakness or use another attack method to cause harm. | Provides an opportunity for a threat to compromise a system when exploitable. |
+
+## 4. Real World scenario
 
 | No | Scenario | Category | Reasoning |
 |----|----------|----------|-----------|
