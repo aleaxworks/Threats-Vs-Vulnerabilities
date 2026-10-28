@@ -39,7 +39,8 @@ Cybersecurity is important to protect computer systems, networks, and sensitive 
 | 9 | A company website doesn’t validate user input in its contact form, allowing malicious SQL commands. | Vulnerability | SQL Injection risk — a coding flaw in input validation. |
 | 10 | Attackers use fake job advertisements on social media to trick users into sharing personal data. | Threat | Social engineering — psychological manipulation used to gain sensitive information. |
 
-## 4. Conclusion
+## 5. Conclusion
 
-In conclusion, threats and vulnerabilities are different but related cybersecurity concepts. Threats can cause harm to systems, while vulnerabilities are weaknesses that may be exploited. Identifying both helps organizations improve security and reduce risks.
+In conclusion, threats and vulnerabilities are important concepts in cybersecurity. A threat is something that can cause harm to a system, while a vulnerability is a weakness that attackers can take advantage of. For example, a hacker may try to access a system, and a weak password can make it easier for the attack to succeed. By understanding these differences, organizations can identify security risks and take steps to protect their systems and data.
+
 
