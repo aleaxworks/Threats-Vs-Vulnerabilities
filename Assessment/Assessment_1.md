@@ -41,6 +41,6 @@ Cybersecurity is important to protect computer systems, networks, and sensitive 
 
 ## 5. Conclusion
 
-In conclusion, threats and vulnerabilities are important concepts in cybersecurity. A threat is something that can cause harm to a system, while a vulnerability is a weakness that attackers can take advantage of. For example, a hacker may try to access a system, and a weak password can make it easier for the attack to succeed. By understanding these differences, organizations can identify security risks and take steps to protect their systems and data.
+In conclusion, threats and vulnerabilities are important concepts in cybersecurity. A threat is something that can cause harm to a system, while a vulnerability is a weakness that attackers can take advantage of. For example, a hacker may try to access a system, and a weak password can make it easier for the attack to succeed.By identifying and understanding both threats and vulnerabilities, organizations can implement stronger **security controls, policies, and defense mechanisms** to protect their digital assets and maintain the **confidentiality, integrity, and availability (CIA)** of their information systems.
 
 
