@@ -63,24 +63,23 @@ gobuster dir -u http://192.168.56.101 -w /usr/share/wordlists/dirbuster/director
 ```
 
 Result:
-``` bash
 
-<img width="678" height="396" alt="image" src="https://github.com/user-attachments/assets/de45abbc-7cef-428f-a053-a376314bf29a" />
+<img width="630" height="393" alt="image" src="https://github.com/user-attachments/assets/79e23ff5-4571-4d1e-a677-544b3742ed97" />
 
-<img width="1359" height="524" alt="image" src="https://github.com/user-attachments/assets/01c8f50e-a6da-4f9f-911e-910bbee187b6" />
+<img width="1362" height="601" alt="image" src="https://github.com/user-attachments/assets/3276b530-4e22-430a-a5a9-d4b85987a3e5" />
 
-<img width="1361" height="444" alt="image" src="https://github.com/user-attachments/assets/19370552-5955-48f8-877f-1fe4fc630ace" />
-
+<img width="1362" height="606" alt="image" src="https://github.com/user-attachments/assets/89d08320-792b-4de5-8ff5-189bb4483a44" />
 
 ```
 
 Hidden resources were discovered, including a page containing a **QR code**.
 
----
 
 ## QR Code Analysis
 
-<img width="1361" height="561" alt="image" src="https://github.com/user-attachments/assets/7817642d-d1bd-4ee6-ada2-a71a1c95ef55" />
+<img width="1357" height="603" alt="image" src="https://github.com/user-attachments/assets/47f821a3-dec5-4015-b75a-b9e82765c9f0" />
+
+<img width="726" height="944" alt="image" src="https://github.com/user-attachments/assets/c80d68ff-02fa-492c-b799-98842d74313f" />
 
 
 Scanning the QR code revealed **FTP credentials**.
@@ -90,7 +89,7 @@ Scanning the QR code revealed **FTP credentials**.
 ## FTP Access
 
 ``` bash
-ftp 192.168.56.105
+ftp 192.168.56.101
 ```
 
 List files:
@@ -200,7 +199,7 @@ search ssh_login
 Configure exploit:
 
 ``` bash
-set RHOSTS 192.168.56.105
+set RHOSTS 192.168.56.101
 set PASS_FILE p_lists.txt
 set USERNAME robin
 run
@@ -216,7 +215,7 @@ Credentials discovered:
 ## SSH Login
 
 ``` bash
-ssh robin@192.168.56.105
+ssh robin@192.168.56.101
 ```
 
 Retrieve user flag:
