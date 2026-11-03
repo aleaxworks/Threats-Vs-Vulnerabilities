@@ -64,12 +64,15 @@ gobuster dir -u http://192.168.56.101 -w /usr/share/wordlists/dirbuster/director
 
 Result:
 ``` bash
-/server-status        (Status: 403) [Size: 279]
-/hidden_text          (Status: 200) [Size: 1169]
-```
 
-<img src="Photo/Bluemoon2.png">
-<img src="Photo/Bluemoon3.png">
+<img width="678" height="396" alt="image" src="https://github.com/user-attachments/assets/de45abbc-7cef-428f-a053-a376314bf29a" />
+
+<img width="1359" height="524" alt="image" src="https://github.com/user-attachments/assets/01c8f50e-a6da-4f9f-911e-910bbee187b6" />
+
+<img width="1361" height="444" alt="image" src="https://github.com/user-attachments/assets/19370552-5955-48f8-877f-1fe4fc630ace" />
+
+
+```
 
 Hidden resources were discovered, including a page containing a **QR code**.
 
@@ -77,8 +80,8 @@ Hidden resources were discovered, including a page containing a **QR code**.
 
 ## QR Code Analysis
 
-<img src="Photo/Bluemoon4.png">
-<img src="Photo/Bluemoon5.png">
+<img width="1361" height="561" alt="image" src="https://github.com/user-attachments/assets/7817642d-d1bd-4ee6-ada2-a71a1c95ef55" />
+
 
 Scanning the QR code revealed **FTP credentials**.
 
