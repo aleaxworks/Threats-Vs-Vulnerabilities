@@ -75,9 +75,11 @@ Result:
 Hidden resources were discovered, including a page containing a **QR code**.
 
 
+```
 ## QR Code Analysis
 
-<img width="1357" height="603" alt="image" src="https://github.com/user-attachments/assets/47f821a3-dec5-4015-b75a-b9e82765c9f0" />
+<img width="1360" height="628" alt="image" src="https://github.com/user-attachments/assets/d33504d8-1ccf-4800-8bae-579d6f3ba86e" />
+
 
 <img width="726" height="944" alt="image" src="https://github.com/user-attachments/assets/c80d68ff-02fa-492c-b799-98842d74313f" />
 
