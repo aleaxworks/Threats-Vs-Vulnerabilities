@@ -138,6 +138,8 @@ Hello robin ...!
     I'm Already Told You About Your Password Weekness. I will give a Password list. you May Choose Anyone of The Password.
 ```
 
+<img width="657" height="126" alt="Screenshot 2026-11-04 184850" src="https://github.com/user-attachments/assets/1046b6b7-d2cc-4e7e-ae06-fba2ea1413d9" />
+
 Result (p_lists.txt):
 ``` bash
 cat p_lists.txt 
@@ -173,6 +175,11 @@ P0nmuGunth0n
 Shank3rD3v
 KishorMilkV4n
 S4th15hR4cer
+
+```
+
+<img width="384" height="559" alt="Screenshot 2026-11-04 185104" src="https://github.com/user-attachments/assets/fa5a20c9-b7b3-4bc9-b192-7261f8ef7cc3" />
+
 ```
 
 Findings:
