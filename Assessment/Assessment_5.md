@@ -64,7 +64,8 @@ nmap -sC -sV 10.49.167.193
 
 **Evidence:**
 
-![Nmap Scan](images/nmap-scan.png)
+<img width="673" height="543" alt="image" src="https://github.com/user-attachments/assets/b9dc89e6-f80c-4fad-a56f-55102ba8d418" />
+
 
 ### Step 2: Website Enumeration
 
@@ -78,9 +79,10 @@ I inspected the HTML source code and discovered a hidden username.
 
 **Evidence:**
 
-![Website](images/website.png)
+<img width="944" height="489" alt="image" src="https://github.com/user-attachments/assets/edc88603-4966-4c94-9d97-8f414967665d" />
 
-![Username Source](images/username-source.png)
+<img width="316" height="181" alt="image" src="https://github.com/user-attachments/assets/f1782b45-48f4-40dd-a2ff-33c37f5bcaa5" />
+
 
 ### Step 3: Inspecting robots.txt
 
@@ -94,7 +96,8 @@ The file revealed a password clue:
 
 **Evidence:**
 
-![Robots TXT](images/robots-txt.png)
+<img width="771" height="125" alt="image" src="https://github.com/user-attachments/assets/6ab2c2de-53bc-4f58-b174-d578f5231030" />
+
 
 ### Step 4: Accessing Rick Portal
 
@@ -104,7 +107,7 @@ After successful login, I gained access to the Command Panel.
 
 **Evidence:**
 
-![Rick Portal](images/portal-login.png)
+<img width="988" height="427" alt="image" src="https://github.com/user-attachments/assets/482d9bbb-db37-469e-a1a7-4d795fef6d70" />
 
 ### Step 5: Command Execution
 
