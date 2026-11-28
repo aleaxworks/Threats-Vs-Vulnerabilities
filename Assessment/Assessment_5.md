@@ -151,9 +151,9 @@ less Sup3rS3cretPickl3Ingred.txt
 
 **Evidence:**
 
-![Command Execution](images/command-execution.png)
-
-![First Ingredient](images/first-ingredient.png)
+<img width="867" height="420" alt="image" src="https://github.com/user-attachments/assets/044b5a90-29f4-469f-a3ab-8dc713a1f2d3" />
+<img width="366" height="197" alt="image" src="https://github.com/user-attachments/assets/f9037360-3629-4b88-8ef9-9480afcf7d06" />
+<img width="794" height="229" alt="image" src="https://github.com/user-attachments/assets/6b9bf93b-1d82-47b7-8609-702381da68da" />
 
 ### Step 6: Finding the Second Ingredient
 
@@ -193,9 +193,9 @@ less "/home/rick/second ingredients"
 
 **Evidence:**
 
-![Home Directory](images/home-directory-enumeration.png)
+<img width="581" height="347" alt="image" src="https://github.com/user-attachments/assets/68143a22-d9ac-492b-8468-d62b3d80e44b" />
 
-![Second Ingredient](images/second-ingredient.png)
+<img width="823" height="330" alt="image" src="https://github.com/user-attachments/assets/8f4f1c0b-a313-4108-b051-76e9ea64097c" />
 
 ### Step 7: Privilege Escalation
 
@@ -228,9 +228,9 @@ I discovered a file named `3rd.txt`.
 
 **Evidence:**
 
-![Sudo Permissions](images/sudo-permissions.png)
+<img width="567" height="413" alt="image" src="https://github.com/user-attachments/assets/a4591d7a-f7bd-4166-b998-be7c90c9e2b9" />
 
-![Root Directory](images/root-directory.png)
+<img width="887" height="353" alt="image" src="https://github.com/user-attachments/assets/31f8e28d-6038-49e3-baab-f6732b423a28" />
 
 ### Step 8: Finding the Third Ingredient
 
