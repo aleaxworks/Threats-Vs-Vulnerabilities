@@ -230,8 +230,6 @@ I discovered a file named `3rd.txt`.
 
 <img width="567" height="413" alt="image" src="https://github.com/user-attachments/assets/a4591d7a-f7bd-4166-b998-be7c90c9e2b9" />
 
-<img width="887" height="353" alt="image" src="https://github.com/user-attachments/assets/31f8e28d-6038-49e3-baab-f6732b423a28" />
-
 ### Step 8: Finding the Third Ingredient
 
 I used the following command to read the file.
@@ -246,7 +244,7 @@ The output revealed the third ingredient.
 
 **Evidence:**
 
-![Third Ingredient](images/third-ingredient.png)
+<img width="887" height="353" alt="image" src="https://github.com/user-attachments/assets/31f8e28d-6038-49e3-baab-f6732b423a28" />
 
 ## 5. Final Answers
 
@@ -263,7 +261,8 @@ All three ingredients were successfully discovered.
 
 **Evidence:**
 
-![Room Completed](images/room-completed.png)
+<img width="835" height="303" alt="image" src="https://github.com/user-attachments/assets/00108d8d-42c5-432b-8bb7-7bb0dba92bd9" />
+
 
 ## 6. Security Findings
 
